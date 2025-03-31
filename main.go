@@ -1,13 +1,13 @@
 package main
 
 import (
-	"log"
-
 	"github.com/call-forwarding/config"
+	"github.com/call-forwarding/database"
+	"github.com/call-forwarding/server"
 )
 
 func main() {
 	conf := config.GetConfig()
-	log.Printf("config Server :: %+v", *conf.Server)
-	log.Printf("config Db :: %+v", *conf.Db)
+	db := database.NewHarperDatabase(conf)
+	server.NewEchoServer(conf, db).Start()
 }
