@@ -33,13 +33,13 @@ func NewHarperHttpHandler(db database.Database) HarperdbHandler {
 	return &HarperHttpHandler{db: db}
 }
 
-func (h *HarperHttpHandler) CfStatus(c echo.Context) error {
+func (h *HarperHttpHandler) UnConditionalCF(c echo.Context) error {
 	// Read body
 	bd := models.CallForwardingBody{}
 	err := c.Bind(&bd)
 	if err != nil {
 		log.Printf("Unable to parse request body. Error - [%s]", err.Error())
-		return c.JSON(http.StatusBadRequest, models.CallForwardStatusResp{
+		return c.JSON(http.StatusBadRequest, models.HttpErrorResp{
 			Status:  &badRequestStatus,
 			Code:    &badRequestCode,
 			Message: &badRequestMessage,
@@ -51,7 +51,7 @@ func (h *HarperHttpHandler) CfStatus(c echo.Context) error {
 	rex, err := regexp.Compile(pattern)
 	if err != nil {
 		log.Printf("error while compiling regular expression. error - [%s]", err.Error())
-		return c.JSON(http.StatusBadRequest, models.CallForwardStatusResp{
+		return c.JSON(http.StatusBadRequest, models.HttpErrorResp{
 			Status:  &badRequestStatus,
 			Code:    &badRequestCode,
 			Message: &badRequestMessage,
@@ -59,7 +59,7 @@ func (h *HarperHttpHandler) CfStatus(c echo.Context) error {
 	}
 	if !rex.MatchString(bd.PhoneNumber) {
 		log.Printf("Phone number does not match regular expression. Invalid phone number provided [%s]", bd.PhoneNumber)
-		return c.JSON(http.StatusBadRequest, models.CallForwardStatusResp{
+		return c.JSON(http.StatusBadRequest, models.HttpErrorResp{
 			Status:  &badRequestStatus,
 			Code:    &badRequestCode,
 			Message: &badRequestMessage,
@@ -67,7 +67,7 @@ func (h *HarperHttpHandler) CfStatus(c echo.Context) error {
 	}
 
 	// Get details from the harperdb
-	phoneDetails := []models.CallForwardStatusResp{}
+	phoneDetails := []models.UnconditionalCFStatusDb{}
 	schemaName := "data"
 	dbName := "callforwards"
 	searchAttribute := "phoneNumber"
@@ -77,7 +77,7 @@ func (h *HarperHttpHandler) CfStatus(c echo.Context) error {
 	err = h.db.GetDb().SearchByValue(schemaName, dbName, &phoneDetails, harperdb.Attribute(searchAttribute), searchValue, harperdb.AttributeList(attributeList))
 	if err != nil {
 		log.Println("Error while reading phone details from database. Error - ", err.Error())
-		return c.JSON(http.StatusInternalServerError, models.CallForwardStatusResp{
+		return c.JSON(http.StatusInternalServerError, models.HttpErrorResp{
 			Status:  &internalServerStatus,
 			Code:    &internalServerCode,
 			Message: &internalServerMessage,
@@ -86,13 +86,77 @@ func (h *HarperHttpHandler) CfStatus(c echo.Context) error {
 
 	// Iterate over the list
 	for _, phn := range phoneDetails {
-		if phn.PhoneNumber != nil && *phn.PhoneNumber == bd.PhoneNumber && phn.Active != nil {
-			phn.PhoneNumber = nil
-			return c.JSON(http.StatusOK, phn)
+		if phn.PhoneNumber == bd.PhoneNumber {
+			return c.JSON(http.StatusOK, models.UnconditionalCallForwardingStatusHttpResp{Active: phn.UnconditionalCFStatus})
 		}
 	}
 
-	return c.JSON(http.StatusInternalServerError, models.CallForwardStatusResp{
+	return c.JSON(http.StatusNotFound, models.HttpErrorResp{
+		Status:  &notFoundStatus,
+		Code:    &notFoundCode,
+		Message: &notFoundMessage,
+	})
+}
+
+func (h *HarperHttpHandler) CallForwardings(c echo.Context) error {
+	// Read body
+	bd := models.CallForwardingBody{}
+	err := c.Bind(&bd)
+	if err != nil {
+		log.Printf("Unable to parse request body. Error - [%s]", err.Error())
+		return c.JSON(http.StatusBadRequest, models.HttpErrorResp{
+			Status:  &badRequestStatus,
+			Code:    &badRequestCode,
+			Message: &badRequestMessage,
+		})
+	}
+
+	// Check for valid phone number string
+	pattern := `^\+\d{4,14}$`
+	rex, err := regexp.Compile(pattern)
+	if err != nil {
+		log.Printf("error while compiling regular expression. error - [%s]", err.Error())
+		return c.JSON(http.StatusBadRequest, models.HttpErrorResp{
+			Status:  &badRequestStatus,
+			Code:    &badRequestCode,
+			Message: &badRequestMessage,
+		})
+	}
+	if !rex.MatchString(bd.PhoneNumber) {
+		log.Printf("Phone number does not match regular expression. Invalid phone number provided [%s]", bd.PhoneNumber)
+		return c.JSON(http.StatusBadRequest, models.HttpErrorResp{
+			Status:  &badRequestStatus,
+			Code:    &badRequestCode,
+			Message: &badRequestMessage,
+		})
+	}
+
+	// Get details from the harperdb
+	phoneDetails := []models.ConditionalCallForwardingHttpResp{}
+	schemaName := "data"
+	dbName := "callforwards"
+	searchAttribute := "phoneNumber"
+	searchValue := bd.PhoneNumber
+	attributeList := []string{"*"}
+
+	err = h.db.GetDb().SearchByValue(schemaName, dbName, &phoneDetails, harperdb.Attribute(searchAttribute), searchValue, harperdb.AttributeList(attributeList))
+	if err != nil {
+		log.Println("Error while reading phone details from database. Error - ", err.Error())
+		return c.JSON(http.StatusInternalServerError, models.HttpErrorResp{
+			Status:  &internalServerStatus,
+			Code:    &internalServerCode,
+			Message: &internalServerMessage,
+		})
+	}
+
+	// Iterate over the list
+	for _, phn := range phoneDetails {
+		if phn.PhoneNumber == bd.PhoneNumber {
+			return c.JSON(http.StatusOK, phn.CallForwadingConditions)
+		}
+	}
+
+	return c.JSON(http.StatusNotFound, models.HttpErrorResp{
 		Status:  &notFoundStatus,
 		Code:    &notFoundCode,
 		Message: &notFoundMessage,
