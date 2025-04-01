@@ -1,4 +1,7 @@
 name: Build workflow
+env:
+  DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+  DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
 
 on:
   pull_request:
@@ -21,15 +24,10 @@ jobs:
         env:
           JOB_CONTEXT: ${{ toJson(job) }}
         run: echo "$JOB_CONTEXT"
-        
-  if_merged:
-    if: github.event.pull_request.merged == true
-    runs-on: ubuntu-latest
-    steps:
+
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Run post-merge actions
-        run: |
-          echo "Pull request was merged into main branch"
-          # Add your post-merge actions here
+      - name: run build script
+        run: ./my_build.sh
+
