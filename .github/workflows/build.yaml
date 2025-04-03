@@ -25,6 +25,7 @@ jobs:
 
       - name: print all environment variables
         run: env
+        
 
       - name: Checkout code
         uses: actions/checkout@v4
