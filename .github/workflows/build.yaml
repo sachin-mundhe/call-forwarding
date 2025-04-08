@@ -6,9 +6,6 @@ env:
 
 on:
   pull_request:
-  push:
-    branches: 
-      - master
 
 jobs:
   print_context:
@@ -34,9 +31,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: run static check script
-        run: ./staticchecks.sh
+        run: ./scripts/staticchecks.sh
 
       - name: run build script
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' || github.event.pull_request.merged == true }}
-        run: ./my_build.sh
+        if: ${{ github.event.pull_request.merged == true }}
+        run: ./scripts/my_build.sh
 
