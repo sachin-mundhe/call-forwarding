@@ -14,6 +14,3 @@ func main() {
 	db := database.NewHarperDatabase(conf)
 	server.NewEchoServer(conf, db).Start()
 }
-
-
-
