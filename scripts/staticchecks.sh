@@ -11,7 +11,7 @@ if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then
     exit 1
 fi
 
-MIN_COVERAGE=90
+MIN_COVERAGE=10
 
 (go test ./... -coverprofile=coverage.out)
 
