@@ -1,0 +1,8 @@
+server:
+  port: 8080
+  
+db:
+  host: http://harperdb
+  port: 9925
+  user: test_user
+  password: test_password

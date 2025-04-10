@@ -1,6 +1,8 @@
 package config
 
 import (
+	"log"
+	"os"
 	"strings"
 	"sync"
 
@@ -33,6 +35,11 @@ var (
 
 func GetConfig() *Config {
 	once.Do(func() {
+		log.Println("================")
+		wd, _ := os.Getwd()
+		log.Println("PWD:: ", wd)
+		log.Println("================")
+
 		viper.SetConfigName("config")
 		viper.SetConfigType("yaml")
 		viper.AddConfigPath("./")
