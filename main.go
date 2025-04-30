@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	log.Println("Call forwarding demo")
+	log.Println("CICD Workflow demo")
 	conf := config.GetConfig()
 	db := database.NewHarperDatabase(conf)
 	server.NewEchoServer(conf, db).Start()
